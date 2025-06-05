@@ -1,0 +1,55 @@
+name: CI with SAST and DAST (no GHCR)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  sast-dast:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK for SonarCloud
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Build Docker image
+      run: docker build -t vuln-web-app .
+
+    - name: Run Docker container
+      run: docker run -d -p 8080:8080 --name vuln vuln-web-app
+
+    - name: Run SonarCloud Scan (SAST)
+      uses: SonarSource/sonarqube-scan-action@v5.0.0
+      with:
+        projectBaseDir: '.'
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: 'https://sonarcloud.io'
+
+    - name: Run OWASP ZAP Baseline DAST
+      run: |
+        sleep 15
+        docker run --network host -v ${{ github.workspace }}:/zap/wrk:rw \
+          ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://localhost:8080 -r zap_report.html
+
+    - name: Upload ZAP Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: zap-report
+        path: zap_report.html
+
+    - name: Slack Notification
+      if: always()
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        SLACK_TITLE: Security Scan Report
+        SLACK_MESSAGE: SAST + DAST pipeline completed.
+

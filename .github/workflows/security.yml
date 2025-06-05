@@ -1,55 +1,62 @@
-name: CI with SAST and DAST (no GHCR)
+name: SAST and DAST CI Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
+    branches: [main]
 
 jobs:
-  sast-dast:
+  sast_dast:
     runs-on: ubuntu-latest
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up JDK for SonarCloud
-      uses: actions/setup-java@v3
+    # 🔍 SAST - SonarCloud
+    - name: SonarCloud Scan
+      uses: SonarSource/sonarqube-scan-action@v5
       with:
-        java-version: '17'
-        distribution: 'temurin'
+        projectBaseDir: .
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: https://sonarcloud.io
+        SONAR_PROJECT_KEY: sast-dast-project_sast-dast-ci-cd-integration
+        SONAR_ORGANIZATION: sast-dast-project
 
+    # 🛠 Build Docker Image Locally
     - name: Build Docker image
       run: docker build -t vuln-web-app .
 
-    - name: Run Docker container
-      run: docker run -d -p 8080:8080 --name vuln vuln-web-app
-
-    - name: Run SonarCloud Scan (SAST)
-      uses: SonarSource/sonarqube-scan-action@v5.0.0
+    # 🧪 DAST - Run OWASP ZAP
+    - name: Run OWASP ZAP baseline scan
+      uses: zaproxy/action-baseline@v0.12.0
       with:
-        projectBaseDir: '.'
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        SONAR_HOST_URL: 'https://sonarcloud.io'
+        target: http://host.docker.internal:8080
+        docker_name: 'vuln-web-app'
+        cmd_options: '-a'
+      continue-on-error: true
 
-    - name: Run OWASP ZAP Baseline DAST
-      run: |
-        sleep 15
-        docker run --network host -v ${{ github.workspace }}:/zap/wrk:rw \
-          ghcr.io/zaproxy/zaproxy:stable zap-baseline.py -t http://localhost:8080 -r zap_report.html
-
+    # 📤 Upload ZAP report
     - name: Upload ZAP Report
       uses: actions/upload-artifact@v4
       with:
         name: zap-report
-        path: zap_report.html
+        path: zap.out
 
-    - name: Slack Notification
+    # 🔔 Slack Notification
+    - name: Notify Slack
       if: always()
-      uses: rtCamp/action-slack-notify@v2
+      uses: slackapi/slack-github-action@v1.24.0
+      with:
+        payload: |
+          {
+            "text": "SAST & DAST scan completed for `${{ github.repository }}`. Check results in artifacts and SonarCloud."
+          }
       env:
-        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-        SLACK_TITLE: Security Scan Report
-        SLACK_MESSAGE: SAST + DAST pipeline completed.
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
+	
