@@ -33,7 +33,7 @@ jobs:
 
     services:
       web:
-        image: ghcr.io/${{ github.repository }}:latest  # Replace with your app image if needed
+        image: ghcr.io/toluowo/sast-dast-ci-cd-integration:latest
         ports:
           - 8080:8080
         options: >-
@@ -70,4 +70,3 @@ jobs:
             "text": "*Security Pipeline Complete*:\n• SAST (SonarCloud): ✅\n• DAST (OWASP ZAP): ✅\nArtifact: zap_report.html",
             "username": "CI/CD Security Bot"
           }' ${{ secrets.SLACK_WEBHOOK }}
-
