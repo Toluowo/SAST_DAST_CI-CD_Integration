@@ -17,8 +17,13 @@ jobs:
     - name: Setup Java
       uses: actions/setup-java@v3
       with:
-        distribution: 'adopt'
-        java-version: '11'
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Run SonarCloud Scanner
+      uses: SonarSource/sonarqube-scan-action@v5.0.0
+      env:
+	SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
     - name: SonarCloud Scan
       uses: SonarSource/sonarcloud-github-action@master
