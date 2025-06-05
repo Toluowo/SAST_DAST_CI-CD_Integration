@@ -1,4 +1,4 @@
-name: CI with SAST and DAST (no GHCR)
+name: CI with SAST and DAST using GHCR
 
 on:
   push:
@@ -19,11 +19,14 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Build Docker image
-      run: docker build -t vuln-web-app .
+    - name: Authenticate to GHCR
+      run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+    - name: Pull Docker image from GHCR
+      run: docker pull ghcr.io/toluowo/sast-dast-ci-cd-integration:latest
 
     - name: Run Docker container
-      run: docker run -d -p 8080:8080 --name vuln vuln-web-app
+      run: docker run -d -p 8080:8080 --name vuln ghcr.io/toluowo/sast-dast-ci-cd-integration:latest
 
     - name: Run SonarCloud Scan (SAST)
       uses: SonarSource/sonarqube-scan-action@v5.0.0
