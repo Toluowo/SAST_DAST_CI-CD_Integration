@@ -56,22 +56,6 @@ jobs:
 
     # ZAP Baseline Scan
     - name: Run OWASP ZAP Baseline Scan
-      run: |
-       touch zap_report.html report_json.json report_md.md report_html.html
-       chmod 666 zap_report.html report_json.json report_md.md report_html.html
-       docker run \
-         -v "${{ github.workspace }}:/zap/wrk/:rw" \
-         --network=host \
-         -t ghcr.io/zaproxy/zaproxy:stable \
-         zap-baseline.py \
-         -t http://localhost:8080 \
-         -J report_json.json \
-         -w report_md.md \
-         -r report_html.html \
-         -a \
-         -g zap_report.html
-
-    - name: Run OWASP ZAP Baseline Scan
       uses: zaproxy/action-baseline@v0.12.0
       with:
         target: http://localhost:8080
@@ -84,13 +68,14 @@ jobs:
         name: zap-report
         path: zap_report.html
 
-    # Send Slack notification (if webhook secret exists)
+     # 🔔 Slack Notification
     - name: Notify Slack
-      if: success() || failure()
-      uses: 8398a7/action-slack@v3
+      if: always()
+      uses: slackapi/slack-github-action@v1.24.0
       with:
-        status: ${{ job.status }}
-        fields: repo,message,commit,author
+        payload: |
+          {
+            "text": "SAST & DAST scan completed for `${{ github.repository }}`. Check results in artifacts and SonarCloud."
+          }
       env:
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
