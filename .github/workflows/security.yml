@@ -49,6 +49,11 @@ jobs:
         sleep 10  # give the app time to start
 
     # ZAP Baseline Scan
+    - name: Pre-create zap_report.html
+      run: |
+       touch zap_report.html
+       chmod a+w zap_report.html
+
     - name: Run OWASP ZAP Baseline Scan
       uses: zaproxy/action-baseline@v0.12.0
       with:
