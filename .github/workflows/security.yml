@@ -18,6 +18,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Log in to GHCR
+      run: echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u toluowo --password-stdin
+
+    - name: Pull image
+      run: docker pull ghcr.io/toluowo/sast-dast-ci-cd-integration:latest
+  
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
