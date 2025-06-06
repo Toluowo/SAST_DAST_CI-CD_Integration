@@ -69,13 +69,11 @@ jobs:
         path: zap_report.html
 
      # 🔔 Slack Notification
-    - name: Notify Slack
+    - name: Slack Notification
       if: always()
-      uses: slackapi/slack-github-action@v1.24.0
-      with:
-        payload: |
-          {
-            "text": "SAST & DAST scan completed for `${{ github.repository }}`. Check results in artifacts and SonarCloud."
-          }
-      env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      uses: rtCamp/action-slack-notify@v2
+      env: 
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+        SLACK_TITLE: Security Scan Report
+        SLACK_COLOR: ${{ job.status }}
+        SLACK_MESSAGE: SAST + DAST pipeline completed.
