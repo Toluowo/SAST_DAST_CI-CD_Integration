@@ -79,4 +79,3 @@ jobs:
         SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
         SLACK_TITLE: Security Scan Report
         SLACK_MESSAGE: SAST + DAST pipeline completed.
-
