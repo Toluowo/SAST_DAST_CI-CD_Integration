@@ -72,10 +72,29 @@ jobs:
       env:
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
-    - name: Slack Notification
-      if: always()
-      uses: rtCamp/action-slack-notify@v2
-      env: 
-        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-        SLACK_TITLE: Security Scan Report
-        SLACK_MESSAGE: SAST + DAST pipeline completed.
+#    - name: Slack Notification
+#      if: always()
+#      uses: rtCamp/action-slack-notify@v2
+#      env: 
+#        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+#        SLACK_TITLE: Security Scan Report
+#        SLACK_MESSAGE: SAST + DAST pipeline completed.
+    
+    - name: Notify Slack (Success)
+        if: success()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_COLOR: '#36a64f'
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_TITLE: "DAST Scan Successful"
+          SLACK_MESSAGE: "OWASP ZAP DAST scan completed successfully on ${{ github.repository }} at `${{ github.ref_name }}`."
+
+    - name: Notify Slack (Failure)
+        if: failure()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_COLOR: '#ff0000'
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_TITLE: "DAST Scan Failed"
+          SLACK_MESSAGE: "❌ OWASP ZAP DAST scan failed on ${{ github.repository }} at `${{ github.ref_name }}`. Check logs."
+
